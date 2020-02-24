@@ -7,7 +7,7 @@ from django_bulk_update.helper import bulk_update
 logger = logging.getLogger(__name__)
 
 
-def bulk_sync(new_models, key_fields, filters, batch_size=None):
+def bulk_sync(new_models, key_fields, filters, batch_size=None, delete_staleones=True):
     """ Combine bulk create, update, and delete.  Make the DB match a set of in-memory objects.
 
     `new_models`: Django ORM objects that are the desired state.  They may or may not have `id` set.
@@ -48,8 +48,11 @@ def bulk_sync(new_models, key_fields, filters, batch_size=None):
 
         bulk_update(existing_objs, batch_size=batch_size)
 
-        # delete stale ones...
-        objs.filter(pk__in=[_.pk for _ in list(obj_dict.values())]).delete()
+        if delete_staleones:
+            # delete stale ones...
+            objs.filter(pk__in=[_.pk for _ in list(obj_dict.values())]).delete()
+        else:
+            obj_dict = {}
 
         assert len(existing_objs) == len(new_models) - len(new_objs)
 
